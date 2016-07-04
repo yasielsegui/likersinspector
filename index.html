@@ -83,10 +83,52 @@
   function testAPI() {
     
     FB.api('/me', 'get', {
-      fields : 'posts.limit(1000){id,picture,likes.limit(1000)}'
+      fields : 'posts.limit(1000){id,picture,likes.limit(1000){id,name,picture}}'
     }, function(response) {
       if(response.posts.data)
       {
+        var posts = response.posts.data;
+        var likers = {};
+        for(i=0; i<posts.length; i++)
+        {
+          var post = posts[i];
+          if(post.likes && post.likes.data.length > 0)
+          {
+            var likes = post.likes.data;
+            for(j=0; j<likes.length; j++)
+            {
+              var like = likes[j];
+              if(likers[like.name])
+              {
+                likers[like.name].count++;
+              }
+              else
+              {
+                likers[like.name] = {
+                                      id: like.id,
+                                      name: like.name,
+                                      count: 1,
+                                      picture: (like.picture.data.is_silhouette) ? null : like.picture.data.url
+                                    };
+              }
+
+            }
+          }
+        }
+        
+        var sortable = [];
+        for (var liker in likers){
+              sortable.push(likers[liker]);
+        }
+        sortable.sort(
+            function(a, b) {
+              if(a.count == b.count) 
+                 return a.name < b.name;
+              return b.count - a.count;
+            }
+        );
+
+
         console.log(response.posts.data.length);
       }
       
