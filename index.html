@@ -83,12 +83,16 @@
   function testAPI() {
     
     FB.api('/me', 'get', {
-      fields : 'posts.limit(1000){id,picture,likes.limit(1000){id,name,picture}}'
+      fields : 'posts.limit(1000){id,picture,likes.limit(1000){id,name,picture}},photos.limit(1000){id,name,likes.limit(1000){id,name,picture}}'
     }, function(response) {
+
+      var likers = {};
+
+      // counting the likes in posts
       if(response.posts.data)
       {
         var posts = response.posts.data;
-        var likers = {};
+        
         for(i=0; i<posts.length; i++)
         {
           var post = posts[i];
@@ -115,22 +119,73 @@
             }
           }
         }
-        
-        var sortable = [];
-        for (var liker in likers){
-              sortable.push(likers[liker]);
-        }
-        sortable.sort(
-            function(a, b) {
-              if(a.count == b.count) 
-                 return a.name < b.name;
-              return b.count - a.count;
-            }
-        );
-
-
-        console.log(response.posts.data.length);
       }
+      // counting the likes in photos
+      if(response.photos.data)
+      {
+        var photos = response.photos.data;
+        for(i=0; i<photos.length; i++)
+        {
+          var photo = photos[i];
+          if(photo.likes && photo.likes.data.length > 0)
+          {
+            var likes = photo.likes.data;
+            for(j=0; j<likes.length; j++)
+            {
+              var like = likes[j];
+              if(likers[like.name])
+              {
+                likers[like.name].count++;
+              }
+              else
+              {
+                likers[like.name] = {
+                                      id: like.id,
+                                      name: like.name,
+                                      count: 1,
+                                      picture: (like.picture.data.is_silhouette) ? null : like.picture.data.url
+                                    };
+              }
+
+            }
+          }
+        }
+      }
+        
+      var sortable = [];
+      for (var liker in likers){
+            sortable.push(likers[liker]);
+      }
+      sortable.sort(
+          function(a, b) {
+            if(a.count == b.count) 
+                return a.name < b.name;
+            return b.count - a.count;
+          }
+      );
+
+
+      var html = '<table style="border: 1px solid blue; padding: 5px 5px;"><thead><th></th><th></th><th>Liker Name</th><th>Likes</th></thead><tbody>';
+      for(i=0; i<sortable.length; i++)
+      {
+        var insideHtml = "<tr>";
+
+        insideHtml += '<td style="font-size:20px;">' + (i+1) + '</td>';
+        insideHtml += '<td><img src="' + sortable[i].picture + '" /></td>';
+        insideHtml += '<td>' + sortable[i].name + '</td>';
+        insideHtml += '<td>' + sortable[i].count + '</td>';
+
+        insideHtml += "</tr>"
+
+        html += insideHtml;
+        
+      }
+      html += "</tbody></table>"
+
+      document.getElementById('content').innerHTML = html;
+
+      console.log(response.posts.data.length);
+      
       
     });
     
@@ -150,7 +205,7 @@
   the FB.login() function when clicked.
 -->
 
-<fb:login-button scope="public_profile,user_friends,email,user_about_me,user_posts" onlogin="checkLoginState();">
+<fb:login-button scope="public_profile,user_friends,email,user_about_me,user_posts,user_photos" onlogin="checkLoginState();">
 </fb:login-button>
 
 <!--
@@ -160,6 +215,12 @@ publish_pages,publish_actions,rsvp_event,pages_show_list,pages_manage_cta,pages_
 
 <div id="status">
 </div>
+
+<div id="content">
+
+</div>
+
+
 
 </body>
 </html>
