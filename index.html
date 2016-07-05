@@ -83,7 +83,7 @@
   function testAPI() {
     
     FB.api('/me', 'get', {
-      fields : 'posts.limit(1000){id,picture,likes.limit(1000){id,name,picture}},photos.limit(1000){id,name,likes.limit(1000){id,name,picture}}'
+      fields : 'posts.limit(1000){id,picture,comments.limit(1000){id,from,likes.limit(1000){id,name,picture}},likes.limit(1000){id,name,picture}},photos.limit(1000){id,name,likes.limit(1000){id,name,picture}}'
     }, function(response) {
 
       var likers = {};
@@ -96,6 +96,43 @@
         for(i=0; i<posts.length; i++)
         {
           var post = posts[i];
+
+
+         //counting the likes inside your comments
+         if(post.comments && post.comments.data.length > 0)
+         {
+           var comments = post.comments.data;
+           for(k=0; k<comments.length; k++)
+           {
+             var comment = comments[k];
+             if(comment.from.name == "Yasiel Segui")/*TODO: Change for the id*/
+             {
+               if(comment.likes && comment.likes.data.length > 0)
+               {
+                 var likes = comment.likes.data;
+                 for(m=0; m<likes.length; m++)
+                 {
+                   var like = likes[m];
+                   if(likers[like.name])
+                   {
+                     likers[like.name].count++;
+                   }
+                   else
+                   {
+                     likers[like.name] = {
+                                           id: like.id,
+                                           name: like.name,
+                                           count: 1,
+                                           picture: (like.picture.data.is_silhouette) ? null : like.picture.data.url
+                                         };
+                   }
+                 }
+               }
+             }
+           }
+           
+         }
+
           if(post.likes && post.likes.data.length > 0)
           {
             var likes = post.likes.data;
