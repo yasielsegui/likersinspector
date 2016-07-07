@@ -158,7 +158,7 @@
         }
       }
       // counting the likes in photos
-      if(response.photos.data)
+      if(response.photos && response.photos.data)
       {
         var photos = response.photos.data;
         for(i=0; i<photos.length; i++)
