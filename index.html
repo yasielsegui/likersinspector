@@ -89,7 +89,7 @@
       var likers = {};
 
       // counting the likes in posts
-      if(response.posts.data)
+      if(response.posts && response.posts.data)
       {
         var posts = response.posts.data;
         
